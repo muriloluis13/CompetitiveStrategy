@@ -479,10 +479,9 @@ body {
 .section-card.open .sec-chevron { transform: rotate(90deg); }
 
 .section-body {
-  max-height: 0; overflow: hidden;
-  transition: max-height 0.4s ease;
+  display: none;
 }
-.section-card.open .section-body { max-height: 15000px; }
+.section-card.open .section-body { display: block; }
 
 .section-content {
   padding: 0 24px 24px;
@@ -6160,8 +6159,7 @@ function init() {
   renderSidebar();
   renderHome();
   renderBookMap();
-  // Default read view
-  navigateToChapter(1);
+  // Default page: Home (keep .view-home active)
 }
 
 function renderSidebar() {
@@ -6259,7 +6257,7 @@ function renderChapter(chNum) {
             <div class="sa-label">Analogy</div>
             <p>${sec.analogy}</p>
           </div>
-          ${sec.content || '<p class="section-placeholder">Content for this section will be added progressively. Ask me to fill it in!</p>'}
+          ${sec.content ? `<div class="section-rich" id="sec-rich-${chNum}-${i}"></div>` : '<p class="section-placeholder">Content for this section will be added progressively. Ask me to fill it in!</p>'}
         </div>
       </div>
     </div>`;
@@ -6287,6 +6285,17 @@ function renderChapter(chNum) {
       <p>${chapter.analogy}</p>
     </div>
     ${sectionsHtml}`;
+
+  // Confine sec.content parsing to a dedicated element.
+  // This prevents HTML tags inside sec.content from accidentally closing
+  // wrappers in the section template and "leaking" visible content.
+  if (chapter.sections.length > 0) {
+    chapter.sections.forEach((sec, i) => {
+      if (!sec.content) return;
+      const el = document.getElementById(`sec-rich-${chNum}-${i}`);
+      if (el) el.innerHTML = sec.content;
+    });
+  }
 
   // Update sidebar active
   document.querySelectorAll('.chapter-link').forEach(l => l.classList.remove('active'));
